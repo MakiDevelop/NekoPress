@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2076775F2DDDC2A100CDA8FD /* SDWebImageWebPCoder in Frameworks */ = {isa = PBXBuildFile; productRef = 2076775E2DDDC2A100CDA8FD /* SDWebImageWebPCoder */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		2076774E2DDDB5FE00CDA8FD /* NekoPress.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NekoPress.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2076775F2DDDC2A100CDA8FD /* SDWebImageWebPCoder in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = NekoPress;
 			packageProductDependencies = (
+				2076775E2DDDC2A100CDA8FD /* SDWebImageWebPCoder */,
 			);
 			productName = NekoPress;
 			productReference = 2076774E2DDDB5FE00CDA8FD /* NekoPress.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 207677452DDDB5FE00CDA8FD;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2076775D2DDDC2A100CDA8FD /* XCRemoteSwiftPackageReference "SDWebImageWebPCoder" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2076774F2DDDB5FE00CDA8FD /* Products */;
 			projectDirPath = "";
@@ -266,7 +275,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = tw.maki.NekoPress;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -305,7 +314,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = tw.maki.NekoPress;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -341,6 +350,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2076775D2DDDC2A100CDA8FD /* XCRemoteSwiftPackageReference "SDWebImageWebPCoder" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SDWebImage/SDWebImageWebPCoder.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2076775E2DDDC2A100CDA8FD /* SDWebImageWebPCoder */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2076775D2DDDC2A100CDA8FD /* XCRemoteSwiftPackageReference "SDWebImageWebPCoder" */;
+			productName = SDWebImageWebPCoder;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 207677462DDDB5FE00CDA8FD /* Project object */;
 }

@@ -1,0 +1,26 @@
+# Xcode
+.DS_Store
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata
+*.moved-aside
+DerivedData/
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# macOS 系統
+*.DS_Store
+
+# Logs
+*.log
+
+# Swift Package Manager
+/.build
+/Packages
+Package.resolved
+
+# App output
+*.app
