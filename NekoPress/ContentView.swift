@@ -48,24 +48,28 @@ struct ContentView: View {
     private let updateQueue = DispatchQueue(label: "com.nekopress.update", attributes: .concurrent)
     private let updateLock = NSLock()
     @State private var pendingUpdates: [CompressionUpdate] = []
+    @State private var showAbout: Bool = false
 
     let compressionLevels = ["快", "中", "慢"]
     let outputFormats = ["JPEG", "WebP"]
 
-var body: some View {
+    var body: some View {
         VStack(spacing: 16) {
-            Toggle("夜間模式", isOn: $isDarkMode)
+            Toggle(LocalizedStringKey("toggle_dark_mode"), isOn: $isDarkMode)
                 .padding(.horizontal)
+                .onChange(of: isDarkMode) { _ in
+                    saveSettings()
+                }
 
             DropAreaView(images: $images)
 
             VStack(spacing: 4) {
-                Text("壓縮等級會影響畫質與檔案大小：快 → 壓縮多但畫質差，慢 → 壓縮少但畫質好")
+                Text(LocalizedStringKey("hint_compression_quality"))
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .padding(.horizontal)
 
-                Picker("壓縮等級", selection: $compressionLevel) {
+                Picker(LocalizedStringKey("label_compression_level"), selection: $compressionLevel) {
                     ForEach(compressionLevels, id: \.self) { level in
                         Text(level)
                     }
@@ -76,7 +80,7 @@ var body: some View {
                     saveSettings()
                 }
 
-                Picker("輸出格式", selection: $outputFormat) {
+                Picker(LocalizedStringKey("label_output_format"), selection: $outputFormat) {
                     ForEach(outputFormats, id: \.self) { format in
                         Text(format)
                     }
@@ -88,12 +92,12 @@ var body: some View {
                 }
             }
 
-            Button("選擇輸出資料夾") {
+            Button(LocalizedStringKey("button_choose_output_folder")) {
                 selectOutputFolder()
             }
             .padding(.top, 8)
 
-            Toggle("備份原圖到 Origin 資料夾", isOn: $shouldBackupOriginals)
+            Toggle(LocalizedStringKey("toggle_backup_original"), isOn: $shouldBackupOriginals)
                 .padding(.horizontal)
 
             ProgressView(value: progress)
@@ -102,39 +106,64 @@ var body: some View {
             if originalTotalSize > 0 {
                 let saved = originalTotalSize - compressedTotalSize
                 let percent = Double(saved) / Double(originalTotalSize) * 100
-                Text(String(format: "總共減少 %.2f KB（%.1f%%）", Double(saved) / 1024.0, percent))
+                Text(String(format: NSLocalizedString("text_saved_summary", comment: ""), Double(saved) / 1024.0, percent))
                     .font(.subheadline)
                     .foregroundColor(.green)
             }
 
             HStack {
-                Button("開始壓縮") {
+                Button(LocalizedStringKey("button_start_compression")) {
                     startCompression()
                 }
                 .disabled(images.isEmpty || isCompressing)
 
-                Button("取消壓縮") {
+                Button(LocalizedStringKey("button_cancel_compression")) {
                     cancelCompression()
                 }
                 .disabled(!isCompressing)
             }
             .padding(.horizontal)
 
-            Button("清除所有圖片") {
+            Button(LocalizedStringKey("button_clear_all")) {
                 images.removeAll()
             }
             .padding(.bottom, 8)
+
+            // 新增：關於 NekoPress 按鈕
+            Button(LocalizedStringKey("about_button")) {
+                showAbout = true
+            }
         }
         .padding()
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .onAppear {
             loadSettings()
         }
-        .alert("壓縮失敗", isPresented: $showErrorAlert, actions: {
-            Button("確定", role: .cancel) { }
+        .alert(LocalizedStringKey("alert_compression_failed"), isPresented: $showErrorAlert, actions: {
+            Button(LocalizedStringKey("button_ok"), role: .cancel) { }
         }, message: {
             Text(errorMessage)
         })
+        // 新增：關於 NekoPress sheet
+        .sheet(isPresented: $showAbout) {
+            VStack(spacing: 16) {
+                Text(LocalizedStringKey("about_title"))
+                    .font(.title2)
+                    .padding(.top, 24)
+                Text(LocalizedStringKey("about_version")) // e.g. "版本 1.0"
+                    .font(.subheadline)
+                Text(LocalizedStringKey("about_languages")) // e.g. "支援語言：繁體中文、English、日本語"
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Button(LocalizedStringKey("about_close")) {
+                    showAbout = false
+                }
+                .keyboardShortcut(.cancelAction)
+                .padding(.bottom, 24)
+            }
+            .frame(width: 320, height: 240)
+        }
     }
 
     // 使用 CGImage 並直接產生縮圖 CGImage
@@ -220,7 +249,7 @@ var body: some View {
                     guard let source = CGImageSourceCreateWithURL(item.url as CFURL, nil),
                           let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
                         DispatchQueue.main.async {
-                            self.errorMessage = "無法載入圖片：\(item.url.lastPathComponent)"
+                            self.errorMessage = String(format: NSLocalizedString("error_cannot_load_image", comment: ""), item.url.lastPathComponent)
                             self.showErrorAlert = true
                         }
                         return
@@ -292,7 +321,7 @@ var body: some View {
                                 }
                             } catch {
                                 DispatchQueue.main.async {
-                                    self.errorMessage = "無法寫入檔案：\(fileURL.lastPathComponent)"
+                                    self.errorMessage = String(format: NSLocalizedString("error_cannot_write_file", comment: ""), fileURL.lastPathComponent)
                                     self.showErrorAlert = true
                                 }
                             }
@@ -353,6 +382,7 @@ var body: some View {
         let defaults = UserDefaults.standard
         defaults.set(compressionLevel, forKey: "compressionLevel")
         defaults.set(outputFormat, forKey: "outputFormat")
+        defaults.set(isDarkMode, forKey: "isDarkMode")
     }
 
     func loadSettings() {
@@ -363,6 +393,7 @@ var body: some View {
         if let savedFormat = defaults.string(forKey: "outputFormat") {
             outputFormat = savedFormat
         }
+        isDarkMode = defaults.bool(forKey: "isDarkMode")
     }
 }
 
@@ -379,7 +410,7 @@ struct DropAreaView: View {
                 Rectangle()
                     .fill(Color.clear)
                     .overlay(
-                        Text("拖曳圖片到此處")
+                        Text(LocalizedStringKey("drop_hint"))
                             .foregroundColor(.secondary)
                     )
             } else {

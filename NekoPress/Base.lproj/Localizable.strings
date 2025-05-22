@@ -1,0 +1,27 @@
+/*
+  Localizable.strings
+  NekoPress
+
+  Created by 千葉牧人 on 2025/5/21.
+  
+*/
+"toggle_dark_mode" = "夜間模式";
+"hint_compression_quality" = "壓縮等級會影響畫質與檔案大小：快 → 壓縮多但畫質差，慢 → 壓縮少但畫質好";
+"label_compression_level" = "壓縮等級";
+"label_output_format" = "輸出格式";
+"button_choose_output_folder" = "選擇輸出資料夾";
+"toggle_backup_original" = "備份原圖到 Origin 資料夾";
+"text_saved_summary" = "總共減少 %.2f KB（%.1f%%）";
+"button_start_compression" = "開始壓縮";
+"button_cancel_compression" = "取消壓縮";
+"button_clear_all" = "清除所有圖片";
+"alert_compression_failed" = "壓縮失敗";
+"button_ok" = "確定";
+"error_cannot_load_image" = "無法載入圖片：%@";
+"error_cannot_write_file" = "無法寫入檔案：%@";
+"drop_hint" = "拖曳圖片到此處";
+"about_button" = "關於 NekoPress";
+"about_title" = "關於 NekoPress";
+"about_version" = "版本 1.1.0";
+"about_languages" = "支援語言：繁體中文、English、日本語";
+"about_close" = "關閉";

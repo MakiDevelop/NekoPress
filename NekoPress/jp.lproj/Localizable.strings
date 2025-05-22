@@ -1,0 +1,27 @@
+/*
+  Localizable.strings
+  NekoPress
+
+  Created by 千葉牧人 on 2025/5/21.
+  
+*/
+"toggle_dark_mode" = "ダークモード";
+"hint_compression_quality" = "圧縮レベルによって画質とファイルサイズが変わります：速い → 小さいが画質が悪い、遅い → 画質は良いがファイルが大きい";
+"label_compression_level" = "圧縮レベル";
+"label_output_format" = "出力形式";
+"button_choose_output_folder" = "出力フォルダを選択";
+"toggle_backup_original" = "元画像を Origin フォルダにバックアップする";
+"text_saved_summary" = "合計 %.2f KB（%.1f%%）削減";
+"button_start_compression" = "圧縮を開始";
+"button_cancel_compression" = "圧縮をキャンセル";
+"button_clear_all" = "すべての画像をクリア";
+"alert_compression_failed" = "圧縮に失敗しました";
+"button_ok" = "OK";
+"error_cannot_load_image" = "画像を読み込めません：%@";
+"error_cannot_write_file" = "ファイルの書き込みに失敗しました：%@";
+"drop_hint" = "ここに画像をドラッグ";
+"about_button" = "NekoPressについて";
+"about_title" = "NekoPressについて";
+"about_version" = "バージョン 1.1.0";
+"about_languages" = "対応言語：繁体字中国語、英語、日本語";
+"about_close" = "閉じる";
