@@ -189,7 +189,6 @@ var body: some View {
         operationQueue.maxConcurrentOperationCount = max(1, ProcessInfo.processInfo.activeProcessorCount / 2)
         operationQueue.qualityOfService = .userInitiated
 
-        let total = images.count
         var processedCount = 0
         let progressLock = NSLock()
 
