@@ -20,6 +20,13 @@ struct CompressImage {
     var compressedSize: Int? = nil
 }
 
+// 新增：用於批次更新 UI 的結構
+struct CompressionUpdate {
+    let index: Int
+    let compressedSize: Int
+    let totalSize: Int
+}
+
 // 共用全域 CIContext，避免每次呼叫時重新初始化
 let sharedCIContext = CIContext()
 
@@ -37,6 +44,10 @@ struct ContentView: View {
     @State private var shouldBackupOriginals: Bool = false
     @State private var showErrorAlert: Bool = false
     @State private var errorMessage: String = ""
+    @State private var updateTimer: Timer? = nil
+    private let updateQueue = DispatchQueue(label: "com.nekopress.update", attributes: .concurrent)
+    private let updateLock = NSLock()
+    @State private var pendingUpdates: [CompressionUpdate] = []
 
     let compressionLevels = ["快", "中", "慢"]
     let outputFormats = ["JPEG", "WebP"]
@@ -160,7 +171,9 @@ var body: some View {
         cancelRequested = false
         isCompressing = true
         progress = 0.0
+        pendingUpdates.removeAll()
 
+        // 計算原始總大小
         originalTotalSize = images.reduce(0) { total, item in
             if let resourceValues = try? item.url.resourceValues(forKeys: [.fileSizeKey]),
                let fileSize = resourceValues.fileSize {
@@ -170,122 +183,172 @@ var body: some View {
         }
         compressedTotalSize = 0
 
+        // 使用 OperationQueue 來更好地控制並行處理
+        let operationQueue = OperationQueue()
+        // 限制並行數量為 CPU 核心數的一半
+        operationQueue.maxConcurrentOperationCount = max(1, ProcessInfo.processInfo.activeProcessorCount / 2)
+        operationQueue.qualityOfService = .userInitiated
+
         let total = images.count
-        let group = DispatchGroup()
-        let queue = DispatchQueue(label: "compression.queue", attributes: .concurrent)
+        var processedCount = 0
+        let progressLock = NSLock()
+
+        // 啟動 UI 更新計時器
+        startUpdateTimer()
 
         for (index, item) in images.enumerated() {
-            queue.async(group: group) {
-                if cancelRequested {
-                    return
-                }
+            if cancelRequested { break }
 
-                let baseDirectory: URL
-                if let customOutput = outputFolderURL {
-                    baseDirectory = customOutput
-                } else {
-                    baseDirectory = item.url.deletingLastPathComponent()
-                }
-
-                // 根據 outputFormat 決定副檔名與寫入格式
-                let ext = outputFormat.lowercased()
-                let baseName: String
-                if FileManager.default.fileExists(atPath: item.url.path) {
-                    baseName = item.url.deletingPathExtension().lastPathComponent
-                } else {
-                    baseName = "image_\(index)"
-                }
-                let filename = "\(baseName)_compressed.\(ext)"
-                let fileURL = baseDirectory.appendingPathComponent(filename)
-
-                // 直接用 CGImageSource 讀取 CGImage
-                guard let source = CGImageSourceCreateWithURL(item.url as CFURL, nil),
-                      let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-                    DispatchQueue.main.async {
-                        errorMessage = "無法載入圖片：\(item.url.lastPathComponent)"
-                        showErrorAlert = true
+            let operation = BlockOperation { [self] in
+                autoreleasepool {
+                    let baseDirectory: URL
+                    if let customOutput = outputFolderURL {
+                        baseDirectory = customOutput
+                    } else {
+                        baseDirectory = item.url.deletingLastPathComponent()
                     }
-                    return
-                }
 
-                var imageData: Data?
-                switch outputFormat {
-                case "JPEG":
-                    let quality: CGFloat
-                    switch compressionLevel {
-                    case "快":
-                        quality = 0.1
-                    case "中":
-                        quality = 0.3
-                    case "慢":
-                        quality = 0.5
-                    default:
-                        quality = 0.3
+                    let ext = outputFormat.lowercased()
+                    let baseName: String
+                    if FileManager.default.fileExists(atPath: item.url.path) {
+                        baseName = item.url.deletingPathExtension().lastPathComponent
+                    } else {
+                        baseName = "image_\(index)"
                     }
-                    // 用 CGImage 轉 NSBitmapImageRep
-                    let bitmap = NSBitmapImageRep(cgImage: cgImage)
-                    imageData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality])
-                case "WebP":
-                    let quality: CGFloat
-                    switch compressionLevel {
-                    case "快":
-                        quality = 0.2
-                    case "中":
-                        quality = 0.5
-                    case "慢":
-                        quality = 0.8
-                    default:
-                        quality = 0.5
-                    }
-                    // 縮圖（CGImage流程），建立 NSImage 包裝 CGImage 再交給 WebPCoder
-                    let resized = downscaleCGImage(cgImage, maxDimension: 2048) ?? cgImage
-                    let nsImage = NSImage(cgImage: resized, size: NSSize(width: resized.width, height: resized.height))
-                    imageData = SDImageWebPCoder.shared.encodedData(
-                        with: nsImage,
-                        format: .webP,
-                        options: [
-                            SDImageCoderOption.encodeCompressionQuality: quality,
-                            SDImageWebPCoderOptionEncodeMethod: 1,
-                            SDImageWebPCoderOptionThreadLevel: true
-                        ]
-                    )
-                default:
-                    break
-                }
+                    let filename = "\(baseName)_compressed.\(ext)"
+                    let fileURL = baseDirectory.appendingPathComponent(filename)
 
-                if let data = imageData {
-                    do {
-                        try data.write(to: fileURL)
+                    guard let source = CGImageSourceCreateWithURL(item.url as CFURL, nil),
+                          let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
                         DispatchQueue.main.async {
-                            compressedTotalSize += data.count
-                            images[index].compressedSize = data.count
-                            progress = Double(index + 1) / Double(total)
+                            self.errorMessage = "無法載入圖片：\(item.url.lastPathComponent)"
+                            self.showErrorAlert = true
                         }
-                    } catch {
-                        DispatchQueue.main.async {
-                            errorMessage = "無法寫入檔案：\(fileURL.lastPathComponent)"
-                            showErrorAlert = true
+                        return
+                    }
+
+                    var imageData: Data?
+                    switch outputFormat {
+                    case "JPEG":
+                        let quality: CGFloat
+                        switch compressionLevel {
+                        case "快": quality = 0.1
+                        case "中": quality = 0.3
+                        case "慢": quality = 0.5
+                        default: quality = 0.3
+                        }
+                        let bitmap = NSBitmapImageRep(cgImage: cgImage)
+                        imageData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality])
+                    case "WebP":
+                        let quality: CGFloat
+                        switch compressionLevel {
+                        case "快": quality = 0.2
+                        case "中": quality = 0.5
+                        case "慢": quality = 0.8
+                        default: quality = 0.5
+                        }
+                        let resized = self.downscaleCGImage(cgImage, maxDimension: 2048) ?? cgImage
+                        let nsImage = NSImage(cgImage: resized, size: NSSize(width: resized.width, height: resized.height))
+                        imageData = SDImageWebPCoder.shared.encodedData(
+                            with: nsImage,
+                            format: .webP,
+                            options: [
+                                SDImageCoderOption.encodeCompressionQuality: quality,
+                                SDImageWebPCoderOptionEncodeMethod: 1,
+                                SDImageWebPCoderOptionThreadLevel: true
+                            ]
+                        )
+                    default:
+                        break
+                    }
+
+                    if let data = imageData {
+                        // 使用背景隊列處理檔案寫入
+                        DispatchQueue.global(qos: .utility).async { [self] in
+                            do {
+                                try data.write(to: fileURL)
+                                
+                                // 更新進度
+                                progressLock.lock()
+                                processedCount += 1
+                                let currentProgress = Double(processedCount) / Double(total)
+                                progressLock.unlock()
+
+                                // 將更新加入隊列
+                                self.updateQueue.async { [self] in
+                                    self.updateLock.lock()
+                                    self.pendingUpdates.append(CompressionUpdate(
+                                        index: index,
+                                        compressedSize: data.count,
+                                        totalSize: data.count
+                                    ))
+                                    self.updateLock.unlock()
+                                }
+
+                                // 備份原圖
+                                if self.shouldBackupOriginals {
+                                    let originFolder = item.url.deletingLastPathComponent().appendingPathComponent("Origin", isDirectory: true)
+                                    try? FileManager.default.createDirectory(at: originFolder, withIntermediateDirectories: true)
+                                    let backupURL = originFolder.appendingPathComponent(item.url.lastPathComponent)
+                                    try? FileManager.default.moveItem(at: item.url, to: backupURL)
+                                }
+                            } catch {
+                                DispatchQueue.main.async {
+                                    self.errorMessage = "無法寫入檔案：\(fileURL.lastPathComponent)"
+                                    self.showErrorAlert = true
+                                }
+                            }
                         }
                     }
-                }
-
-                // 再進行原圖備份
-                if shouldBackupOriginals {
-                    let originFolder = item.url.deletingLastPathComponent().appendingPathComponent("Origin", isDirectory: true)
-                    try? FileManager.default.createDirectory(at: originFolder, withIntermediateDirectories: true)
-                    let backupURL = originFolder.appendingPathComponent(item.url.lastPathComponent)
-                    try? FileManager.default.moveItem(at: item.url, to: backupURL)
                 }
             }
+            operationQueue.addOperation(operation)
         }
-        group.notify(queue: .main) {
-            isCompressing = false
+
+        // 監控完成狀態
+        operationQueue.addBarrierBlock {
+            DispatchQueue.main.async { [self] in
+                self.stopUpdateTimer()
+                self.isCompressing = false
+            }
+        }
+    }
+
+    private func startUpdateTimer() {
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { _ in
+            self.updateUI()
+        }
+        updateTimer = timer
+    }
+
+    private func stopUpdateTimer() {
+        updateTimer?.invalidate()
+        updateTimer = nil
+        // 最後一次更新 UI
+        updateUI()
+    }
+
+    private func updateUI() {
+        updateLock.lock()
+        let updates = pendingUpdates
+        pendingUpdates.removeAll()
+        updateLock.unlock()
+
+        guard !updates.isEmpty else { return }
+
+        DispatchQueue.main.async { [self] in
+            for update in updates {
+                self.compressedTotalSize += update.totalSize
+                self.images[update.index].compressedSize = update.compressedSize
+            }
+            self.progress = Double(updates.count) / Double(self.images.count)
         }
     }
 
     func cancelCompression() {
         cancelRequested = true
         isCompressing = false
+        stopUpdateTimer()
     }
 
     func saveSettings() {
