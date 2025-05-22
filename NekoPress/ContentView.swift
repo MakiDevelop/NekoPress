@@ -271,7 +271,6 @@ var body: some View {
                                 // 更新進度
                                 progressLock.lock()
                                 processedCount += 1
-                                let currentProgress = Double(processedCount) / Double(total)
                                 progressLock.unlock()
 
                                 // 將更新加入隊列
