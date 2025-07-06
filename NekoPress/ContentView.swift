@@ -690,7 +690,7 @@ struct ModernDropAreaView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.primary)
                         
-                        Text("支援 JPG、PNG、BMP、HEIC 格式")
+                        Text("支援 JPG、PNG、BMP、HEIC、WebP 格式")
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
@@ -727,7 +727,7 @@ struct ModernDropAreaView: View {
                 _ = provider.loadObject(ofClass: URL.self) { item, error in
                     guard let url = item, error == nil else { return }
 
-                    let allowedExtensions = ["jpg", "jpeg", "png", "bmp", "heic", "heif"]
+                    let allowedExtensions = ["jpg", "jpeg", "png", "bmp", "heic", "heif", "webp"]
                     guard allowedExtensions.contains(url.pathExtension.lowercased()) else { return }
 
                     DispatchQueue.main.async {
