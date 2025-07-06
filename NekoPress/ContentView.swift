@@ -49,92 +49,36 @@ struct ContentView: View {
     private let updateLock = NSLock()
     @State private var pendingUpdates: [CompressionUpdate] = []
     @State private var showAbout: Bool = false
+    @State private var isHoveringDropArea: Bool = false
 
     let compressionLevels = ["快", "中", "慢"]
     let outputFormats = ["JPEG", "WebP"]
 
     var body: some View {
-        VStack(spacing: 16) {
-            Toggle(LocalizedStringKey("toggle_dark_mode"), isOn: $isDarkMode)
-                .padding(.horizontal)
-                .onChange(of: isDarkMode) { _ in
-                    saveSettings()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header Section
+                    headerSection
+                    
+                    // Drop Area Section
+                    dropAreaSection
+                    
+                    // Settings Section
+                    settingsSection
+                    
+                    // Progress Section
+                    progressSection
+                    
+                    // Action Buttons Section
+                    actionButtonsSection
                 }
-
-            DropAreaView(images: $images)
-
-            VStack(spacing: 4) {
-                Text(LocalizedStringKey("hint_compression_quality"))
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal)
-
-                Picker(LocalizedStringKey("label_compression_level"), selection: $compressionLevel) {
-                    ForEach(compressionLevels, id: \.self) { level in
-                        Text(level)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .onChange(of: compressionLevel) { _ in
-                    saveSettings()
-                }
-
-                Picker(LocalizedStringKey("label_output_format"), selection: $outputFormat) {
-                    ForEach(outputFormats, id: \.self) { format in
-                        Text(format)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .onChange(of: outputFormat) { _ in
-                    saveSettings()
-                }
-            }
-
-            Button(LocalizedStringKey("button_choose_output_folder")) {
-                selectOutputFolder()
-            }
-            .padding(.top, 8)
-
-            Toggle(LocalizedStringKey("toggle_backup_original"), isOn: $shouldBackupOriginals)
-                .padding(.horizontal)
-
-            ProgressView(value: progress)
-                .padding(.horizontal)
-
-            if originalTotalSize > 0 {
-                let saved = originalTotalSize - compressedTotalSize
-                let percent = Double(saved) / Double(originalTotalSize) * 100
-                Text(String(format: NSLocalizedString("text_saved_summary", comment: ""), Double(saved) / 1024.0, percent))
-                    .font(.subheadline)
-                    .foregroundColor(.green)
-            }
-
-            HStack {
-                Button(LocalizedStringKey("button_start_compression")) {
-                    startCompression()
-                }
-                .disabled(images.isEmpty || isCompressing)
-
-                Button(LocalizedStringKey("button_cancel_compression")) {
-                    cancelCompression()
-                }
-                .disabled(!isCompressing)
-            }
-            .padding(.horizontal)
-
-            Button(LocalizedStringKey("button_clear_all")) {
-                images.removeAll()
-            }
-            .padding(.bottom, 8)
-
-            // 新增：關於 NekoPress 按鈕
-            Button(LocalizedStringKey("about_button")) {
-                showAbout = true
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .frame(minWidth: 600, minHeight: 700)
             }
         }
-        .padding()
+        .background(backgroundGradient)
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .onAppear {
             loadSettings()
@@ -144,26 +88,356 @@ struct ContentView: View {
         }, message: {
             Text(errorMessage)
         })
-        // 新增：關於 NekoPress sheet
         .sheet(isPresented: $showAbout) {
-            VStack(spacing: 16) {
-                Text(LocalizedStringKey("about_title"))
-                    .font(.title2)
-                    .padding(.top, 24)
-                Text(LocalizedStringKey("about_version")) // e.g. "版本 1.0"
-                    .font(.subheadline)
-                Text(LocalizedStringKey("about_languages")) // e.g. "支援語言：繁體中文、English、日本語"
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Button(LocalizedStringKey("about_close")) {
-                    showAbout = false
-                }
-                .keyboardShortcut(.cancelAction)
-                .padding(.bottom, 24)
-            }
-            .frame(width: 320, height: 240)
+            aboutSheet
         }
+    }
+    
+    // MARK: - Header Section
+    private var headerSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("NekoPress")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    
+                    Text("智能圖片壓縮工具")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                // Dark Mode Toggle
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isDarkMode.toggle()
+                        saveSettings()
+                    }
+                }) {
+                    Image(systemName: isDarkMode ? "moon.fill" : "sun.max.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(isDarkMode ? .yellow : .orange)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.primary.opacity(0.1))
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+            }
+        }
+    }
+    
+    // MARK: - Drop Area Section
+    private var dropAreaSection: some View {
+        VStack(spacing: 16) {
+            ModernDropAreaView(
+                images: $images,
+                isHovering: $isHoveringDropArea
+            )
+            
+            if !images.isEmpty {
+                HStack {
+                    Image(systemName: "photo.stack")
+                        .foregroundColor(.blue)
+                    Text("已選擇 \(images.count) 張圖片")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.primary)
+                    Spacer()
+                }
+                .padding(.horizontal, 4)
+            }
+        }
+    }
+    
+    // MARK: - Settings Section
+    private var settingsSection: some View {
+        VStack(spacing: 20) {
+            // Compression Level
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundColor(.blue)
+                    Text("壓縮等級")
+                        .font(.system(size: 16, weight: .semibold))
+                    Spacer()
+                }
+                
+                ModernSegmentedControl(
+                    selection: $compressionLevel,
+                    options: compressionLevels,
+                    onChange: { saveSettings() }
+                )
+            }
+            
+            // Output Format
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "doc.text")
+                        .foregroundColor(.green)
+                    Text("輸出格式")
+                        .font(.system(size: 16, weight: .semibold))
+                    Spacer()
+                }
+                
+                ModernSegmentedControl(
+                    selection: $outputFormat,
+                    options: outputFormats,
+                    onChange: { saveSettings() }
+                )
+            }
+            
+            // Output Folder
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "folder")
+                        .foregroundColor(.orange)
+                    Text("輸出資料夾")
+                        .font(.system(size: 16, weight: .semibold))
+                    Spacer()
+                }
+                
+                Button(action: selectOutputFolder) {
+                    HStack {
+                        Image(systemName: "folder.badge.plus")
+                            .foregroundColor(.white)
+                        Text(outputFolderURL?.lastPathComponent ?? "選擇輸出資料夾")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.blue)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+            }
+            
+            // Backup Toggle
+            HStack {
+                Image(systemName: "arrow.clockwise")
+                    .foregroundColor(.purple)
+                Text("備份原始檔案")
+                    .font(.system(size: 16, weight: .semibold))
+                Spacer()
+                Toggle("", isOn: $shouldBackupOriginals)
+                    .toggleStyle(SwitchToggleStyle(tint: .purple))
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.primary.opacity(0.05))
+        )
+    }
+    
+    // MARK: - Progress Section
+    private var progressSection: some View {
+        VStack(spacing: 16) {
+            if isCompressing {
+                VStack(spacing: 12) {
+                    HStack {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .foregroundColor(.blue)
+                            .font(.system(size: 16))
+                        Text("正在壓縮...")
+                            .font(.system(size: 16, weight: .semibold))
+                        Spacer()
+                    }
+                    
+                    ProgressView(value: progress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                        .scaleEffect(y: 1.5)
+                    
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.blue.opacity(0.1))
+                )
+            }
+            
+            if originalTotalSize > 0 {
+                let saved = originalTotalSize - compressedTotalSize
+                let percent = Double(saved) / Double(originalTotalSize) * 100
+                
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text(String(format: NSLocalizedString("text_saved_summary", comment: ""), Double(saved) / 1024.0, percent))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.green)
+                    Spacer()
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.green.opacity(0.1))
+                )
+            }
+        }
+    }
+    
+    // MARK: - Action Buttons Section
+    private var actionButtonsSection: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                // Start Compression Button
+                Button(action: startCompression) {
+                    HStack {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("開始壓縮")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(images.isEmpty || isCompressing ? Color.gray : Color.blue)
+                    )
+                }
+                .disabled(images.isEmpty || isCompressing)
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+                
+                // Cancel Button
+                Button(action: cancelCompression) {
+                    HStack {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("取消")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(!isCompressing ? Color.gray : Color.red)
+                    )
+                }
+                .disabled(!isCompressing)
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+            }
+            
+            HStack(spacing: 12) {
+                // Clear All Button
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        images.removeAll()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "trash")
+                            .font(.system(size: 14, weight: .medium))
+                        Text("清除全部")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.red, lineWidth: 1)
+                    )
+                }
+                .disabled(images.isEmpty)
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+                
+                // About Button
+                Button(action: { showAbout = true }) {
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 14, weight: .medium))
+                        Text("關於")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.blue, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+            }
+        }
+    }
+    
+    // MARK: - Background Gradient
+    private var backgroundGradient: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color.primary.opacity(0.02),
+                Color.primary.opacity(0.01),
+                Color.primary.opacity(0.02)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
+    // MARK: - About Sheet
+    private var aboutSheet: some View {
+        VStack(spacing: 20) {
+            VStack(spacing: 12) {
+                Image(systemName: "photo.badge.plus")
+                    .font(.system(size: 48))
+                    .foregroundColor(.blue)
+                
+                Text("NekoPress")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                
+                Text("智能圖片壓縮工具")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.secondary)
+            }
+            
+            VStack(spacing: 8) {
+                Text("版本 1.0")
+                    .font(.system(size: 14, weight: .medium))
+                
+                Text("支援語言：繁體中文、English、日本語")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Spacer()
+            
+            Button("關閉") {
+                showAbout = false
+            }
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.blue)
+            )
+            .buttonStyle(PlainButtonStyle())
+            .contentShape(Rectangle())
+        }
+        .padding(24)
+        .frame(width: 320, height: 280)
     }
 
     // 使用 CGImage 並直接產生縮圖 CGImage
@@ -397,39 +671,58 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-}
-
-struct DropAreaView: View {
+// MARK: - Modern Drop Area View
+struct ModernDropAreaView: View {
     @Binding var images: [CompressImage]
-
+    @Binding var isHovering: Bool
+    
     var body: some View {
-        VStack {
+        VStack(spacing: 16) {
             if images.isEmpty {
-                Rectangle()
-                    .fill(Color.clear)
-                    .overlay(
-                        Text(LocalizedStringKey("drop_hint"))
+                VStack(spacing: 16) {
+                    Image(systemName: "photo.badge.plus")
+                        .font(.system(size: 48))
+                        .foregroundColor(.blue)
+                        .opacity(isHovering ? 0.8 : 0.6)
+                    
+                    VStack(spacing: 8) {
+                        Text("拖拽圖片到此處")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.primary)
+                        
+                        Text("支援 JPG、PNG、BMP、HEIC 格式")
+                            .font(.system(size: 14))
                             .foregroundColor(.secondary)
-                    )
+                    }
+                }
+                .frame(height: 200)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(
+                            isHovering ? Color.blue : Color.gray.opacity(0.3),
+                            lineWidth: isHovering ? 2 : 1
+                        )
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(isHovering ? Color.blue.opacity(0.05) : Color.clear)
+                        )
+                )
+                .scaleEffect(isHovering ? 1.02 : 1.0)
+                .animation(.easeInOut(duration: 0.2), value: isHovering)
             } else {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 12) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 16) {
                         ForEach(Array(images.enumerated()), id: \.offset) { index, item in
-                            VStack {
-                                imagePreview(for: index, item: item)
-                            }
+                            ModernImagePreview(index: index, item: item)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 4)
                 }
+                .frame(height: 200)
             }
         }
-        .frame(height: 180)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(12)
-        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+        .onDrop(of: [.fileURL], isTargeted: $isHovering) { providers in
             for provider in providers {
                 _ = provider.loadObject(ofClass: URL.self) { item, error in
                     guard let url = item, error == nil else { return }
@@ -439,51 +732,116 @@ struct DropAreaView: View {
 
                     DispatchQueue.main.async {
                         let imageItem = CompressImage(url: url)
-                        images.append(imageItem)
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            images.append(imageItem)
+                        }
                     }
                 }
             }
             return true
         }
     }
+}
 
-    func imagePreview(for index: Int, item: CompressImage) -> some View {
-        let nsImage = NSImage(contentsOf: item.url) ?? NSImage(size: .zero)
-        // 不再修改 state during view rendering
-
-        let size = nsImage.size
-        let fileSizeText: String = {
-            if let resourceValues = try? item.url.resourceValues(forKeys: [.fileSizeKey]),
-               let fileSize = resourceValues.fileSize {
-                return String(format: "%.1f KB", Double(fileSize) / 1024.0)
-            }
-            return ""
-        }()
-
-        return VStack {
-            Image(nsImage: nsImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 100, height: 100)
-                .cornerRadius(8)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.5)))
-
-            VStack(spacing: 2) {
-                Text("\(Int(size.width))×\(Int(size.height))")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+// MARK: - Modern Image Preview
+struct ModernImagePreview: View {
+    let index: Int
+    let item: CompressImage
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            let nsImage = NSImage(contentsOf: item.url) ?? NSImage(size: .zero)
+            let size = nsImage.size
+            let fileSizeText: String = {
+                if let resourceValues = try? item.url.resourceValues(forKeys: [.fileSizeKey]),
+                   let fileSize = resourceValues.fileSize {
+                    return String(format: "%.1f KB", Double(fileSize) / 1024.0)
+                }
+                return ""
+            }()
+            
+            ZStack {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 120, height: 120)
+                    .clipped()
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                
                 if let compressed = item.compressedSize {
-                    Text("\(fileSizeText) > \(String(format: "%.1f KB", Double(compressed) / 1024.0))")
-                        .font(.caption2)
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.system(size: 16))
+                                .background(Circle().fill(.white))
+                        }
+                        Spacer()
+                    }
+                    .padding(8)
+                }
+            }
+            
+            VStack(spacing: 4) {
+                Text("\(Int(size.width))×\(Int(size.height))")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                
+                if let compressed = item.compressedSize {
+                    Text("\(fileSizeText) → \(String(format: "%.1f KB", Double(compressed) / 1024.0))")
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.green)
                 } else {
                     Text(fileSizeText)
-                        .font(.caption2)
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.secondary)
                 }
             }
         }
     }
+}
+
+// MARK: - Modern Segmented Control
+struct ModernSegmentedControl: View {
+    @Binding var selection: String
+    let options: [String]
+    let onChange: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(options, id: \.self) { option in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selection = option
+                        onChange()
+                    }
+                }) {
+                    Text(option)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(selection == option ? .white : .primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selection == option ? Color.blue : Color.clear)
+                        )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .contentShape(Rectangle())
+            }
+        }
+        .padding(2)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.primary.opacity(0.1))
+        )
+    }
+}
+
+#Preview {
+    ContentView()
 }
 
 extension DispatchQueue {
