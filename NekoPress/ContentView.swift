@@ -200,24 +200,47 @@ struct ContentView: View {
                     Spacer()
                 }
                 
-                Button(action: selectOutputFolder) {
-                    HStack {
-                        Image(systemName: "folder.badge.plus")
-                            .foregroundColor(.white)
-                        Text(outputFolderURL?.lastPathComponent ?? "選擇輸出資料夾")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                        Spacer()
+                HStack(spacing: 8) {
+                    Button(action: selectOutputFolder) {
+                        HStack {
+                            Image(systemName: "folder.badge.plus")
+                                .foregroundColor(.white)
+                            Text(outputFolderURL?.lastPathComponent ?? "選擇輸出資料夾")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.blue)
+                        )
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.blue)
-                    )
+                    .buttonStyle(PlainButtonStyle())
+                    .contentShape(Rectangle())
+                    
+                    Button(action: {
+                        outputFolderURL = nil
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.uturn.backward")
+                                .foregroundColor(.white)
+                            Text("與輸入圖片相同目錄")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(outputFolderURL == nil ? Color.green : Color.orange)
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(PlainButtonStyle())
-                .contentShape(Rectangle())
             }
             
             // Backup Toggle
