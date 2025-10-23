@@ -127,6 +127,8 @@ struct ContentView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .contentShape(Rectangle())
+                .accessibilityLabel(LocalizedStringKey("accessibility_dark_mode_toggle"))
+                .keyboardShortcut("d", modifiers: [.command])
             }
         }
     }
@@ -138,6 +140,7 @@ struct ContentView: View {
                 images: $images,
                 isHovering: $isHoveringDropArea
             )
+            .accessibilityLabel(String(format: NSLocalizedString("accessibility_drop_area", comment: ""), images.count))
             
             if !images.isEmpty {
                 HStack {
@@ -171,6 +174,7 @@ struct ContentView: View {
                     options: compressionLevels,
                     onChange: { saveSettings() }
                 )
+                .accessibilityLabel(LocalizedStringKey("accessibility_compression_level"))
             }
             
             // Output Format
@@ -188,6 +192,7 @@ struct ContentView: View {
                     options: outputFormats,
                     onChange: { saveSettings() }
                 )
+                .accessibilityLabel(LocalizedStringKey("accessibility_output_format"))
             }
             
             // Output Folder
@@ -252,6 +257,7 @@ struct ContentView: View {
                 Spacer()
                 Toggle("", isOn: $shouldBackupOriginals)
                     .toggleStyle(SwitchToggleStyle(tint: .purple))
+                    .accessibilityLabel(LocalizedStringKey("accessibility_backup_toggle"))
             }
         }
         .padding(20)
@@ -278,7 +284,8 @@ struct ContentView: View {
                     ProgressView(value: progress)
                         .progressViewStyle(LinearProgressViewStyle(tint: .blue))
                         .scaleEffect(y: 1.5)
-                    
+                        .accessibilityValue(String(format: NSLocalizedString("accessibility_progress", comment: ""), Int(progress * 100)))
+
                     Text("\(Int(progress * 100))%")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.secondary)
@@ -334,6 +341,8 @@ struct ContentView: View {
                 .disabled(images.isEmpty || isCompressing)
                 .buttonStyle(PlainButtonStyle())
                 .contentShape(Rectangle())
+                .accessibilityLabel(LocalizedStringKey("accessibility_start_compression"))
+                .keyboardShortcut(.return, modifiers: [.command])
                 
                 // Cancel Button
                 Button(action: cancelCompression) {
@@ -354,6 +363,8 @@ struct ContentView: View {
                 .disabled(!isCompressing)
                 .buttonStyle(PlainButtonStyle())
                 .contentShape(Rectangle())
+                .accessibilityLabel(LocalizedStringKey("accessibility_cancel_compression"))
+                .keyboardShortcut(.cancelAction)
             }
             
             HStack(spacing: 12) {
@@ -380,6 +391,8 @@ struct ContentView: View {
                 .disabled(images.isEmpty)
                 .buttonStyle(PlainButtonStyle())
                 .contentShape(Rectangle())
+                .accessibilityLabel(LocalizedStringKey("accessibility_clear_all"))
+                .keyboardShortcut(.delete, modifiers: [.command])
                 
                 // About Button
                 Button(action: { showAbout = true }) {
@@ -399,6 +412,8 @@ struct ContentView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .contentShape(Rectangle())
+                .accessibilityLabel(LocalizedStringKey("accessibility_about"))
+                .keyboardShortcut("i", modifiers: [.command])
             }
         }
     }
@@ -567,10 +582,10 @@ struct ContentView: View {
                     case "WebP":
                         let quality: CGFloat
                         switch compressionLevel {
-                        case "快": quality = 0.2
-                        case "中": quality = 0.5
-                        case "慢": quality = 0.8
-                        default: quality = 0.5
+                        case "快": quality = 0.3
+                        case "中": quality = 0.7
+                        case "慢": quality = 0.95
+                        default: quality = 0.7
                         }
                         let resized = self.downscaleCGImage(cgImage, maxDimension: 2048) ?? cgImage
                         let nsImage = NSImage(cgImage: resized, size: NSSize(width: resized.width, height: resized.height))
@@ -792,7 +807,7 @@ struct ModernImagePreview: View {
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 
-                if let compressed = item.compressedSize {
+                if item.compressedSize != nil {
                     VStack {
                         HStack {
                             Spacer()

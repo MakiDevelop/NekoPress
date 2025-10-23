@@ -3,7 +3,7 @@
   NekoPress
 
   Created by 千葉牧人 on 2025/5/21.
-  
+
 */
 "toggle_dark_mode" = "ダークモード";
 "hint_compression_quality" = "圧縮レベルによって画質とファイルサイズが変わります：速い → 小さいが画質が悪い、遅い → 画質は良いがファイルが大きい";
@@ -22,6 +22,46 @@
 "drop_hint" = "ここに画像をドラッグ";
 "about_button" = "NekoPressについて";
 "about_title" = "NekoPressについて";
-"about_version" = "バージョン 1.1.0";
+"about_version" = "バージョン 1.4";
 "about_languages" = "対応言語：繁体字中国語、英語、日本語";
 "about_close" = "閉じる";
+
+// 新しいローカライズ文字列
+"app_subtitle" = "スマート画像圧縮ツール";
+"label_images_selected" = "%d枚の画像を選択";
+"label_output_folder" = "出力フォルダ";
+"button_select_folder" = "選択";
+"button_same_as_input" = "入力画像と同じディレクトリ";
+"label_backup_originals" = "オリジナルファイルをバックアップ";
+"label_compressing" = "圧縮中...";
+"button_start" = "圧縮を開始";
+"button_cancel" = "キャンセル";
+"button_clear" = "すべてクリア";
+"button_about" = "について";
+"about_app_title" = "スマート画像圧縮ツール";
+"about_version_number" = "バージョン 1.4";
+"about_supported_languages" = "対応言語：繁体字中国語、英語、日本語";
+"button_close" = "閉じる";
+"drop_area_hint" = "ここに画像をドラッグ";
+"drop_area_formats" = "対応形式：JPG、PNG、BMP、HEIC、WebP";
+"compression_level_fast" = "速い";
+"compression_level_medium" = "標準";
+"compression_level_slow" = "遅い";
+
+// バックアップ関連エラーメッセージ
+"error_backup_failed" = "バックアップ失敗：%@";
+"warning_some_backups_failed" = "一部のファイルのバックアップに失敗しました";
+"error_cannot_create_backup_folder" = "バックアップフォルダを作成できません：%@";
+
+// アクセシビリティラベル
+"accessibility_dark_mode_toggle" = "ダークモードを切り替え";
+"accessibility_compression_level" = "圧縮レベルを選択";
+"accessibility_output_format" = "出力形式を選択";
+"accessibility_select_output_folder" = "出力フォルダを選択";
+"accessibility_backup_toggle" = "元のファイルのバックアップを有効または無効にする";
+"accessibility_start_compression" = "画像の圧縮を開始";
+"accessibility_cancel_compression" = "圧縮をキャンセル";
+"accessibility_clear_all" = "すべての画像をクリア";
+"accessibility_about" = "NekoPressについて";
+"accessibility_drop_area" = "画像のドロップエリア、%d枚の画像が選択されています";
+"accessibility_progress" = "圧縮進捗 %d%%";

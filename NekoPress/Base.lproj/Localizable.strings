@@ -3,7 +3,7 @@
   NekoPress
 
   Created by 千葉牧人 on 2025/5/21.
-  
+
 */
 "toggle_dark_mode" = "夜間模式";
 "hint_compression_quality" = "壓縮等級會影響畫質與檔案大小：快 → 壓縮多但畫質差，慢 → 壓縮少但畫質好";
@@ -22,6 +22,46 @@
 "drop_hint" = "拖曳圖片到此處";
 "about_button" = "關於 NekoPress";
 "about_title" = "關於 NekoPress";
-"about_version" = "版本 1.1.0";
+"about_version" = "版本 1.4";
 "about_languages" = "支援語言：繁體中文、English、日本語";
 "about_close" = "關閉";
+
+// 新增的本地化字串
+"app_subtitle" = "智能圖片壓縮工具";
+"label_images_selected" = "已選擇 %d 張圖片";
+"label_output_folder" = "輸出資料夾";
+"button_select_folder" = "選擇";
+"button_same_as_input" = "與輸入圖片相同目錄";
+"label_backup_originals" = "備份原始檔案";
+"label_compressing" = "正在壓縮...";
+"button_start" = "開始壓縮";
+"button_cancel" = "取消";
+"button_clear" = "清除全部";
+"button_about" = "關於";
+"about_app_title" = "智能圖片壓縮工具";
+"about_version_number" = "版本 1.4";
+"about_supported_languages" = "支援語言：繁體中文、English、日本語";
+"button_close" = "關閉";
+"drop_area_hint" = "拖拽圖片到此處";
+"drop_area_formats" = "支援 JPG、PNG、BMP、HEIC、WebP 格式";
+"compression_level_fast" = "快";
+"compression_level_medium" = "中";
+"compression_level_slow" = "慢";
+
+// 備份相關錯誤訊息
+"error_backup_failed" = "備份失敗：%@";
+"warning_some_backups_failed" = "部分檔案備份失敗";
+"error_cannot_create_backup_folder" = "無法建立備份資料夾：%@";
+
+// 輔助功能標籤
+"accessibility_dark_mode_toggle" = "切換深色模式";
+"accessibility_compression_level" = "選擇壓縮等級";
+"accessibility_output_format" = "選擇輸出格式";
+"accessibility_select_output_folder" = "選擇輸出資料夾";
+"accessibility_backup_toggle" = "啟用或停用備份原始檔案";
+"accessibility_start_compression" = "開始壓縮圖片";
+"accessibility_cancel_compression" = "取消壓縮";
+"accessibility_clear_all" = "清除所有圖片";
+"accessibility_about" = "關於 NekoPress";
+"accessibility_drop_area" = "拖放圖片區域，已選擇 %d 張圖片";
+"accessibility_progress" = "壓縮進度 %d%%";

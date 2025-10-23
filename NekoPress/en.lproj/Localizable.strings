@@ -3,7 +3,7 @@
   NekoPress
 
   Created by 千葉牧人 on 2025/5/21.
-  
+
 */
 "toggle_dark_mode" = "Dark Mode";
 "hint_compression_quality" = "Compression level affects quality and file size: Fast → More compression but lower quality, Slow → Less compression but better quality";
@@ -22,6 +22,46 @@
 "error_cannot_write_file" = "Cannot write file: %@";
 "about_button" = "About NekoPress";
 "about_title" = "NekoPress";
-"about_version" = "Version 1.0";
+"about_version" = "Version 1.4";
 "about_languages" = "Supported Languages: Traditional Chinese, English, Japanese";
 "about_close" = "Close";
+
+// New localized strings
+"app_subtitle" = "Smart Image Compression Tool";
+"label_images_selected" = "%d images selected";
+"label_output_folder" = "Output Folder";
+"button_select_folder" = "Choose";
+"button_same_as_input" = "Same as input images";
+"label_backup_originals" = "Backup Original Files";
+"label_compressing" = "Compressing...";
+"button_start" = "Start Compression";
+"button_cancel" = "Cancel";
+"button_clear" = "Clear All";
+"button_about" = "About";
+"about_app_title" = "Smart Image Compression Tool";
+"about_version_number" = "Version 1.4";
+"about_supported_languages" = "Supported Languages: Traditional Chinese, English, Japanese";
+"button_close" = "Close";
+"drop_area_hint" = "Drag images here";
+"drop_area_formats" = "Supports JPG, PNG, BMP, HEIC, WebP formats";
+"compression_level_fast" = "Fast";
+"compression_level_medium" = "Medium";
+"compression_level_slow" = "Slow";
+
+// Backup related error messages
+"error_backup_failed" = "Backup failed: %@";
+"warning_some_backups_failed" = "Some files failed to backup";
+"error_cannot_create_backup_folder" = "Cannot create backup folder: %@";
+
+// Accessibility labels
+"accessibility_dark_mode_toggle" = "Toggle dark mode";
+"accessibility_compression_level" = "Select compression level";
+"accessibility_output_format" = "Select output format";
+"accessibility_select_output_folder" = "Select output folder";
+"accessibility_backup_toggle" = "Enable or disable backup of original files";
+"accessibility_start_compression" = "Start compressing images";
+"accessibility_cancel_compression" = "Cancel compression";
+"accessibility_clear_all" = "Clear all images";
+"accessibility_about" = "About NekoPress";
+"accessibility_drop_area" = "Drop area for images, %d images selected";
+"accessibility_progress" = "Compression progress %d%%";
