@@ -23,8 +23,8 @@
 "error_cannot_delete_file" = "Cannot delete source file: %@";
 "about_button" = "About NekoPress";
 "about_title" = "NekoPress";
-"about_version" = "Version 1.4";
-"about_languages" = "Supported Languages: Traditional Chinese, English, Japanese";
+"about_version" = "Version %@";
+"about_languages" = "Supported Languages: English, Chinese (Simplified/Traditional), Japanese, Korean, German, French, Spanish, Portuguese, Italian, Arabic";
 "about_close" = "Close";
 
 // New localized strings
@@ -40,14 +40,16 @@
 "button_clear" = "Clear All";
 "button_about" = "About";
 "about_app_title" = "Smart Image Compression Tool";
-"about_version_number" = "Version 1.4";
-"about_supported_languages" = "Supported Languages: Traditional Chinese, English, Japanese";
+"about_version_number" = "Version %@";
+"about_supported_languages" = "Supported Languages: English, Chinese (Simplified/Traditional), Japanese, Korean, German, French, Spanish, Portuguese, Italian, Arabic";
 "button_close" = "Close";
 "drop_area_hint" = "Drag images here";
 "drop_area_formats" = "Supports JPG, PNG, BMP, HEIC, WebP formats";
 "compression_level_fast" = "Fast";
 "compression_level_medium" = "Medium";
 "compression_level_slow" = "Slow";
+"output_format_jpeg" = "JPEG";
+"output_format_webp" = "WebP";
 
 // Backup related error messages
 "error_backup_failed" = "Backup failed: %@";

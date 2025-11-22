@@ -14,6 +14,77 @@ import ImageIO
 let SDImageWebPCoderOptionEncodeMethod = SDImageCoderOption(rawValue: "com.sdwebimage.webp.encodeMethod")
 let SDImageWebPCoderOptionThreadLevel = SDImageCoderOption(rawValue: "com.sdwebimage.webp.threadLevel")
 
+struct SegmentedOption: Identifiable {
+    let id: String
+    let title: LocalizedStringKey
+}
+
+enum CompressionLevelOption: String, CaseIterable {
+    case fast
+    case medium
+    case slow
+
+    var titleKey: LocalizedStringKey {
+        switch self {
+        case .fast:
+            return LocalizedStringKey("compression_level_fast")
+        case .medium:
+            return LocalizedStringKey("compression_level_medium")
+        case .slow:
+            return LocalizedStringKey("compression_level_slow")
+        }
+    }
+
+    var segmentOption: SegmentedOption {
+        SegmentedOption(id: rawValue, title: titleKey)
+    }
+
+    func quality(for format: OutputFormatOption) -> Double {
+        switch (format, self) {
+        case (.jpeg, .fast): return 0.1
+        case (.jpeg, .medium): return 0.3
+        case (.jpeg, .slow): return 0.5
+        case (.webp, .fast): return 0.3
+        case (.webp, .medium): return 0.7
+        case (.webp, .slow): return 0.95
+        }
+    }
+
+    static func normalizedRawValue(from value: String) -> String {
+        if CompressionLevelOption(rawValue: value) != nil {
+            return value
+        }
+        switch value {
+        case "快", "快速", "速い", "Fast":
+            return CompressionLevelOption.fast.rawValue
+        case "中", "標準", "Medium":
+            return CompressionLevelOption.medium.rawValue
+        case "慢", "緩慢", "遅い", "Slow":
+            return CompressionLevelOption.slow.rawValue
+        default:
+            return CompressionLevelOption.medium.rawValue
+        }
+    }
+}
+
+enum OutputFormatOption: String, CaseIterable {
+    case jpeg = "JPEG"
+    case webp = "WebP"
+
+    var titleKey: LocalizedStringKey {
+        switch self {
+        case .jpeg:
+            return LocalizedStringKey("output_format_jpeg")
+        case .webp:
+            return LocalizedStringKey("output_format_webp")
+        }
+    }
+
+    var segmentOption: SegmentedOption {
+        SegmentedOption(id: rawValue, title: titleKey)
+    }
+}
+
 struct CompressImage {
     let url: URL
     var image: NSImage? = nil
@@ -33,8 +104,8 @@ let sharedCIContext = CIContext()
 
 struct ContentView: View {
     @State private var isDarkMode: Bool = false
-    @State private var compressionLevel: String = "中"
-    @State private var outputFormat: String = "JPEG"
+    @State private var compressionLevelValue: String = CompressionLevelOption.medium.rawValue
+    @State private var outputFormatValue: String = OutputFormatOption.jpeg.rawValue
     @State private var outputFolderURL: URL? = nil
     @State private var progress: Double = 0.0
     @State private var isCompressing: Bool = false
@@ -52,8 +123,16 @@ struct ContentView: View {
     @State private var showAbout: Bool = false
     @State private var isHoveringDropArea: Bool = false
 
-    let compressionLevels = ["快", "中", "慢"]
-    let outputFormats = ["JPEG", "WebP"]
+    private let compressionSegmentOptions = CompressionLevelOption.allCases.map { $0.segmentOption }
+    private let outputFormatSegmentOptions = OutputFormatOption.allCases.map { $0.segmentOption }
+
+    private var selectedCompressionLevel: CompressionLevelOption {
+        CompressionLevelOption(rawValue: compressionLevelValue) ?? .medium
+    }
+
+    private var selectedOutputFormat: OutputFormatOption {
+        OutputFormatOption(rawValue: outputFormatValue) ?? .jpeg
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -103,7 +182,7 @@ struct ContentView: View {
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
                     
-                    Text("智能圖片壓縮工具")
+                    Text(LocalizedStringKey("app_subtitle"))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.secondary)
                 }
@@ -147,7 +226,7 @@ struct ContentView: View {
                 HStack {
                     Image(systemName: "photo.stack")
                         .foregroundColor(.blue)
-                    Text("已選擇 \(images.count) 張圖片")
+                    Text(String.localizedStringWithFormat(NSLocalizedString("label_images_selected", comment: ""), images.count))
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.primary)
                     Spacer()
@@ -165,14 +244,14 @@ struct ContentView: View {
                 HStack {
                     Image(systemName: "slider.horizontal.3")
                         .foregroundColor(.blue)
-                    Text("壓縮等級")
+                    Text(LocalizedStringKey("label_compression_level"))
                         .font(.system(size: 16, weight: .semibold))
                     Spacer()
                 }
                 
                 ModernSegmentedControl(
-                    selection: $compressionLevel,
-                    options: compressionLevels,
+                    selection: $compressionLevelValue,
+                    options: compressionSegmentOptions,
                     onChange: { saveSettings() }
                 )
                 .accessibilityLabel(LocalizedStringKey("accessibility_compression_level"))
@@ -183,14 +262,14 @@ struct ContentView: View {
                 HStack {
                     Image(systemName: "doc.text")
                         .foregroundColor(.green)
-                    Text("輸出格式")
+                    Text(LocalizedStringKey("label_output_format"))
                         .font(.system(size: 16, weight: .semibold))
                     Spacer()
                 }
                 
                 ModernSegmentedControl(
-                    selection: $outputFormat,
-                    options: outputFormats,
+                    selection: $outputFormatValue,
+                    options: outputFormatSegmentOptions,
                     onChange: { saveSettings() }
                 )
                 .accessibilityLabel(LocalizedStringKey("accessibility_output_format"))
@@ -201,7 +280,7 @@ struct ContentView: View {
                 HStack {
                     Image(systemName: "folder")
                         .foregroundColor(.orange)
-                    Text("輸出資料夾")
+                    Text(LocalizedStringKey("label_output_folder"))
                         .font(.system(size: 16, weight: .semibold))
                     Spacer()
                 }
@@ -211,7 +290,7 @@ struct ContentView: View {
                         HStack {
                             Image(systemName: "folder.badge.plus")
                                 .foregroundColor(.white)
-                            Text(outputFolderURL?.lastPathComponent ?? "選擇輸出資料夾")
+                            Text(outputFolderURL?.lastPathComponent ?? NSLocalizedString("button_choose_output_folder", comment: ""))
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white)
                         }
@@ -232,7 +311,7 @@ struct ContentView: View {
                         HStack {
                             Image(systemName: "arrow.uturn.backward")
                                 .foregroundColor(.white)
-                            Text("與輸入圖片相同目錄")
+                            Text(LocalizedStringKey("button_same_as_input"))
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white)
                         }
@@ -280,7 +359,7 @@ struct ContentView: View {
                         Image(systemName: "arrow.down.circle.fill")
                             .foregroundColor(.blue)
                             .font(.system(size: 16))
-                        Text("正在壓縮...")
+                        Text(LocalizedStringKey("label_compressing"))
                             .font(.system(size: 16, weight: .semibold))
                         Spacer()
                     }
@@ -331,7 +410,7 @@ struct ContentView: View {
                     HStack {
                         Image(systemName: "play.fill")
                             .font(.system(size: 16, weight: .semibold))
-                        Text("開始壓縮")
+                        Text(LocalizedStringKey("button_start"))
                             .font(.system(size: 16, weight: .semibold))
                     }
                     .foregroundColor(.white)
@@ -353,7 +432,7 @@ struct ContentView: View {
                     HStack {
                         Image(systemName: "stop.fill")
                             .font(.system(size: 16, weight: .semibold))
-                        Text("取消")
+                        Text(LocalizedStringKey("button_cancel"))
                             .font(.system(size: 16, weight: .semibold))
                     }
                     .foregroundColor(.white)
@@ -381,7 +460,7 @@ struct ContentView: View {
                     HStack {
                         Image(systemName: "trash")
                             .font(.system(size: 14, weight: .medium))
-                        Text("清除全部")
+                        Text(LocalizedStringKey("button_clear"))
                             .font(.system(size: 14, weight: .medium))
                     }
                     .foregroundColor(.red)
@@ -403,7 +482,7 @@ struct ContentView: View {
                     HStack {
                         Image(systemName: "info.circle")
                             .font(.system(size: 14, weight: .medium))
-                        Text("關於")
+                        Text(LocalizedStringKey("button_about"))
                             .font(.system(size: 14, weight: .medium))
                     }
                     .foregroundColor(.blue)
@@ -447,16 +526,16 @@ struct ContentView: View {
                 Text("NekoPress")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                 
-                Text("智能圖片壓縮工具")
+                Text(LocalizedStringKey("app_subtitle"))
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.secondary)
             }
             
             VStack(spacing: 8) {
-                Text("版本 \(appVersion)")
+                Text(String.localizedStringWithFormat(NSLocalizedString("about_version_number", comment: ""), appVersion))
                     .font(.system(size: 14, weight: .medium))
                 
-                Text("支援語言：繁體中文、English、日本語")
+                Text(LocalizedStringKey("about_supported_languages"))
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -464,7 +543,7 @@ struct ContentView: View {
             
             Spacer()
             
-            Button("關閉") {
+            Button(LocalizedStringKey("button_close")) {
                 showAbout = false
             }
             .font(.system(size: 16, weight: .semibold))
@@ -504,7 +583,7 @@ struct ContentView: View {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
-        panel.prompt = "選擇"
+        panel.prompt = NSLocalizedString("button_select_folder", comment: "")
 
         if panel.runModal() == .OK {
             outputFolderURL = panel.url
@@ -556,7 +635,7 @@ struct ContentView: View {
                         baseDirectory = item.url.deletingLastPathComponent()
                     }
 
-                    let ext = outputFormat.lowercased()
+                    let ext = selectedOutputFormat.rawValue.lowercased()
                     let baseName: String
                     if FileManager.default.fileExists(atPath: item.url.path) {
                         baseName = item.url.deletingPathExtension().lastPathComponent
@@ -576,25 +655,13 @@ struct ContentView: View {
                     }
 
                     var imageData: Data?
-                    switch outputFormat {
-                    case "JPEG":
-                        let quality: CGFloat
-                        switch compressionLevel {
-                        case "快": quality = 0.1
-                        case "中": quality = 0.3
-                        case "慢": quality = 0.5
-                        default: quality = 0.3
-                        }
+                    switch selectedOutputFormat {
+                    case .jpeg:
+                        let quality = CGFloat(selectedCompressionLevel.quality(for: .jpeg))
                         let bitmap = NSBitmapImageRep(cgImage: cgImage)
                         imageData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality])
-                    case "WebP":
-                        let quality: CGFloat
-                        switch compressionLevel {
-                        case "快": quality = 0.3
-                        case "中": quality = 0.7
-                        case "慢": quality = 0.95
-                        default: quality = 0.7
-                        }
+                    case .webp:
+                        let quality = CGFloat(selectedCompressionLevel.quality(for: .webp))
                         let resized = self.downscaleCGImage(cgImage, maxDimension: 2048) ?? cgImage
                         let nsImage = NSImage(cgImage: resized, size: NSSize(width: resized.width, height: resized.height))
                         imageData = SDImageWebPCoder.shared.encodedData(
@@ -703,8 +770,8 @@ struct ContentView: View {
 
     func saveSettings() {
         let defaults = UserDefaults.standard
-        defaults.set(compressionLevel, forKey: "compressionLevel")
-        defaults.set(outputFormat, forKey: "outputFormat")
+        defaults.set(compressionLevelValue, forKey: "compressionLevel")
+        defaults.set(outputFormatValue, forKey: "outputFormat")
         defaults.set(isDarkMode, forKey: "isDarkMode")
         defaults.set(shouldDeleteSourceFiles, forKey: "shouldDeleteSourceFiles")
     }
@@ -712,10 +779,10 @@ struct ContentView: View {
     func loadSettings() {
         let defaults = UserDefaults.standard
         if let savedLevel = defaults.string(forKey: "compressionLevel") {
-            compressionLevel = savedLevel
+            compressionLevelValue = CompressionLevelOption.normalizedRawValue(from: savedLevel)
         }
         if let savedFormat = defaults.string(forKey: "outputFormat") {
-            outputFormat = savedFormat
+            outputFormatValue = savedFormat
         }
         isDarkMode = defaults.bool(forKey: "isDarkMode")
         if defaults.object(forKey: "shouldDeleteSourceFiles") != nil {
@@ -741,11 +808,11 @@ struct ModernDropAreaView: View {
                         .opacity(isHovering ? 0.8 : 0.6)
                     
                     VStack(spacing: 8) {
-                        Text("拖拽圖片到此處")
+                        Text(LocalizedStringKey("drop_area_hint"))
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.primary)
                         
-                        Text("支援 JPG、PNG、BMP、HEIC、WebP 格式")
+                        Text(LocalizedStringKey("drop_area_formats"))
                             .font(.system(size: 14))
                             .foregroundColor(.secondary)
                     }
@@ -869,26 +936,26 @@ struct ModernImagePreview: View {
 // MARK: - Modern Segmented Control
 struct ModernSegmentedControl: View {
     @Binding var selection: String
-    let options: [String]
+    let options: [SegmentedOption]
     let onChange: () -> Void
     
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(options, id: \.self) { option in
+            ForEach(options) { option in
                 Button(action: {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        selection = option
+                        selection = option.id
                         onChange()
                     }
                 }) {
-                    Text(option)
+                    Text(option.title)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(selection == option ? .white : .primary)
+                        .foregroundColor(selection == option.id ? .white : .primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selection == option ? Color.blue : Color.clear)
+                                .fill(selection == option.id ? Color.blue : Color.clear)
                         )
                 }
                 .buttonStyle(PlainButtonStyle())

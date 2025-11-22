@@ -23,8 +23,8 @@
 "drop_hint" = "拖曳圖片到此處";
 "about_button" = "關於 NekoPress";
 "about_title" = "關於 NekoPress";
-"about_version" = "版本 1.4";
-"about_languages" = "支援語言：繁體中文、English、日本語";
+"about_version" = "版本 %@";
+"about_languages" = "支援語言：英文、中文（簡／繁）、日文、韓文、德文、法文、西班牙文、葡萄牙文、義大利文、阿拉伯文";
 "about_close" = "關閉";
 
 // 新增的本地化字串
@@ -40,14 +40,16 @@
 "button_clear" = "清除全部";
 "button_about" = "關於";
 "about_app_title" = "智能圖片壓縮工具";
-"about_version_number" = "版本 1.4";
-"about_supported_languages" = "支援語言：繁體中文、English、日本語";
+"about_version_number" = "版本 %@";
+"about_supported_languages" = "支援語言：英文、中文（簡／繁）、日文、韓文、德文、法文、西班牙文、葡萄牙文、義大利文、阿拉伯文";
 "button_close" = "關閉";
 "drop_area_hint" = "拖拽圖片到此處";
 "drop_area_formats" = "支援 JPG、PNG、BMP、HEIC、WebP 格式";
 "compression_level_fast" = "快";
 "compression_level_medium" = "中";
 "compression_level_slow" = "慢";
+"output_format_jpeg" = "JPEG";
+"output_format_webp" = "WebP";
 
 // 備份相關錯誤訊息
 "error_backup_failed" = "備份失敗：%@";
