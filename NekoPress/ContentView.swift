@@ -18,6 +18,7 @@ struct CompressImage {
     let url: URL
     var image: NSImage? = nil
     var compressedSize: Int? = nil
+    var originalFileSize: Int? = nil
 }
 
 // 新增：用於批次更新 UI 的結構
@@ -41,7 +42,7 @@ struct ContentView: View {
     @State private var originalTotalSize: Int = 0
     @State private var compressedTotalSize: Int = 0
     @State private var cancelRequested: Bool = false
-    @State private var shouldBackupOriginals: Bool = false
+    @State private var shouldDeleteSourceFiles: Bool = false
     @State private var showErrorAlert: Bool = false
     @State private var errorMessage: String = ""
     @State private var updateTimer: Timer? = nil
@@ -248,16 +249,19 @@ struct ContentView: View {
                 }
             }
             
-            // Backup Toggle
+            // Delete Source Toggle
             HStack {
-                Image(systemName: "arrow.clockwise")
-                    .foregroundColor(.purple)
-                Text("備份原始檔案")
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+                Text(LocalizedStringKey("label_delete_source_files"))
                     .font(.system(size: 16, weight: .semibold))
                 Spacer()
-                Toggle("", isOn: $shouldBackupOriginals)
-                    .toggleStyle(SwitchToggleStyle(tint: .purple))
-                    .accessibilityLabel(LocalizedStringKey("accessibility_backup_toggle"))
+                Toggle("", isOn: $shouldDeleteSourceFiles)
+                    .toggleStyle(SwitchToggleStyle(tint: .red))
+                    .accessibilityLabel(LocalizedStringKey("accessibility_delete_source_toggle"))
+                    .onChange(of: shouldDeleteSourceFiles) { _ in
+                        saveSettings()
+                    }
             }
         }
         .padding(20)
@@ -449,7 +453,7 @@ struct ContentView: View {
             }
             
             VStack(spacing: 8) {
-                Text("版本 1.0")
+                Text("版本 \(appVersion)")
                     .font(.system(size: 14, weight: .medium))
                 
                 Text("支援語言：繁體中文、English、日本語")
@@ -475,7 +479,11 @@ struct ContentView: View {
             .contentShape(Rectangle())
         }
         .padding(24)
-        .frame(width: 320, height: 280)
+        .frame(width: 320, height: 340)
+    }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.6.1"
     }
 
     // 使用 CGImage 並直接產生縮圖 CGImage
@@ -624,12 +632,15 @@ struct ContentView: View {
                                     self.updateLock.unlock()
                                 }
 
-                                // 備份原圖
-                                if self.shouldBackupOriginals {
-                                    let originFolder = item.url.deletingLastPathComponent().appendingPathComponent("Origin", isDirectory: true)
-                                    try? FileManager.default.createDirectory(at: originFolder, withIntermediateDirectories: true)
-                                    let backupURL = originFolder.appendingPathComponent(item.url.lastPathComponent)
-                                    try? FileManager.default.moveItem(at: item.url, to: backupURL)
+                                if self.shouldDeleteSourceFiles {
+                                    do {
+                                        try FileManager.default.removeItem(at: item.url)
+                                    } catch {
+                                        DispatchQueue.main.async {
+                                            self.errorMessage = String(format: NSLocalizedString("error_cannot_delete_file", comment: ""), item.url.lastPathComponent)
+                                            self.showErrorAlert = true
+                                        }
+                                    }
                                 }
                             } catch {
                                 DispatchQueue.main.async {
@@ -695,6 +706,7 @@ struct ContentView: View {
         defaults.set(compressionLevel, forKey: "compressionLevel")
         defaults.set(outputFormat, forKey: "outputFormat")
         defaults.set(isDarkMode, forKey: "isDarkMode")
+        defaults.set(shouldDeleteSourceFiles, forKey: "shouldDeleteSourceFiles")
     }
 
     func loadSettings() {
@@ -706,6 +718,11 @@ struct ContentView: View {
             outputFormat = savedFormat
         }
         isDarkMode = defaults.bool(forKey: "isDarkMode")
+        if defaults.object(forKey: "shouldDeleteSourceFiles") != nil {
+            shouldDeleteSourceFiles = defaults.bool(forKey: "shouldDeleteSourceFiles")
+        } else {
+            shouldDeleteSourceFiles = defaults.bool(forKey: "shouldBackupOriginals")
+        }
     }
 }
 
@@ -768,8 +785,13 @@ struct ModernDropAreaView: View {
                     let allowedExtensions = ["jpg", "jpeg", "png", "bmp", "heic", "heif", "webp"]
                     guard allowedExtensions.contains(url.pathExtension.lowercased()) else { return }
 
+                    let cachedImage = NSImage(contentsOf: url)
+                    let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize
+
                     DispatchQueue.main.async {
-                        let imageItem = CompressImage(url: url)
+                        var imageItem = CompressImage(url: url)
+                        imageItem.image = cachedImage
+                        imageItem.originalFileSize = fileSize
                         withAnimation(.easeInOut(duration: 0.3)) {
                             images.append(imageItem)
                         }
@@ -788,9 +810,12 @@ struct ModernImagePreview: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            let nsImage = NSImage(contentsOf: item.url) ?? NSImage(size: .zero)
+            let nsImage = item.image ?? NSImage(contentsOf: item.url) ?? NSImage(size: NSSize(width: 1, height: 1))
             let size = nsImage.size
             let fileSizeText: String = {
+                if let fileSize = item.originalFileSize {
+                    return String(format: "%.1f KB", Double(fileSize) / 1024.0)
+                }
                 if let resourceValues = try? item.url.resourceValues(forKeys: [.fileSizeKey]),
                    let fileSize = resourceValues.fileSize {
                     return String(format: "%.1f KB", Double(fileSize) / 1024.0)

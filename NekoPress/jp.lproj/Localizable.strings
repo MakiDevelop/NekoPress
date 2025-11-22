@@ -19,6 +19,7 @@
 "button_ok" = "OK";
 "error_cannot_load_image" = "画像を読み込めません：%@";
 "error_cannot_write_file" = "ファイルの書き込みに失敗しました：%@";
+"error_cannot_delete_file" = "元のファイルを削除できません：%@";
 "drop_hint" = "ここに画像をドラッグ";
 "about_button" = "NekoPressについて";
 "about_title" = "NekoPressについて";
@@ -32,7 +33,7 @@
 "label_output_folder" = "出力フォルダ";
 "button_select_folder" = "選択";
 "button_same_as_input" = "入力画像と同じディレクトリ";
-"label_backup_originals" = "オリジナルファイルをバックアップ";
+"label_delete_source_files" = "元のファイルを削除";
 "label_compressing" = "圧縮中...";
 "button_start" = "圧縮を開始";
 "button_cancel" = "キャンセル";
@@ -58,7 +59,7 @@
 "accessibility_compression_level" = "圧縮レベルを選択";
 "accessibility_output_format" = "出力形式を選択";
 "accessibility_select_output_folder" = "出力フォルダを選択";
-"accessibility_backup_toggle" = "元のファイルのバックアップを有効または無効にする";
+"accessibility_delete_source_toggle" = "元のファイルの削除を有効または無効にする";
 "accessibility_start_compression" = "画像の圧縮を開始";
 "accessibility_cancel_compression" = "圧縮をキャンセル";
 "accessibility_clear_all" = "すべての画像をクリア";

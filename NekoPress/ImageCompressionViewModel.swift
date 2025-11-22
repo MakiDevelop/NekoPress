@@ -44,7 +44,7 @@ class ImageCompressionViewModel: ObservableObject {
     @Published var images: [CompressImage] = []
     @Published var originalTotalSize: Int = 0
     @Published var compressedTotalSize: Int = 0
-    @Published var shouldBackupOriginals: Bool = false
+    @Published var shouldDeleteSourceFiles: Bool = false
     @Published var showErrorAlert: Bool = false
     @Published var errorMessage: String = ""
     @Published var showAbout: Bool = false
@@ -74,6 +74,7 @@ class ImageCompressionViewModel: ObservableObject {
         defaults.set(compressionLevel, forKey: "compressionLevel")
         defaults.set(outputFormat, forKey: "outputFormat")
         defaults.set(isDarkMode, forKey: "isDarkMode")
+        defaults.set(shouldDeleteSourceFiles, forKey: "shouldDeleteSourceFiles")
     }
 
     func loadSettings() {
@@ -85,11 +86,20 @@ class ImageCompressionViewModel: ObservableObject {
             outputFormat = savedFormat
         }
         isDarkMode = defaults.bool(forKey: "isDarkMode")
+        if defaults.object(forKey: "shouldDeleteSourceFiles") != nil {
+            shouldDeleteSourceFiles = defaults.bool(forKey: "shouldDeleteSourceFiles")
+        } else {
+            shouldDeleteSourceFiles = defaults.bool(forKey: "shouldBackupOriginals")
+        }
     }
 
     // MARK: - Image Management
     func addImage(_ url: URL) {
-        let imageItem = CompressImage(url: url)
+        let cachedImage = NSImage(contentsOf: url)
+        let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize
+        var imageItem = CompressImage(url: url)
+        imageItem.image = cachedImage
+        imageItem.originalFileSize = fileSize
         images.append(imageItem)
     }
 
@@ -231,40 +241,16 @@ class ImageCompressionViewModel: ObservableObject {
         guard let data = imageData else { return }
 
         do {
-            // 先備份原圖（如果需要）
-            if shouldBackupOriginals {
-                let originFolder = item.url.deletingLastPathComponent().appendingPathComponent("Origin", isDirectory: true)
-
-                // 建立備份資料夾
-                do {
-                    try FileManager.default.createDirectory(at: originFolder, withIntermediateDirectories: true)
-                } catch {
-                    errorMessage = String(format: NSLocalizedString("error_cannot_create_backup_folder", comment: ""), originFolder.lastPathComponent)
-                    showErrorAlert = true
-                    throw error
-                }
-
-                // 複製原檔到備份資料夾
-                let backupURL = originFolder.appendingPathComponent(item.url.lastPathComponent)
-                do {
-                    // 如果備份已存在，先刪除
-                    if FileManager.default.fileExists(atPath: backupURL.path) {
-                        try FileManager.default.removeItem(at: backupURL)
-                    }
-                    try FileManager.default.copyItem(at: item.url, to: backupURL)
-                } catch {
-                    errorMessage = String(format: NSLocalizedString("error_backup_failed", comment: ""), item.url.lastPathComponent)
-                    showErrorAlert = true
-                    throw error
-                }
-            }
-
             // 寫入壓縮後的檔案
             try data.write(to: fileURL)
 
-            // 如果啟用備份，刪除原檔（已經備份了）
-            if shouldBackupOriginals {
-                try? FileManager.default.removeItem(at: item.url)
+            if shouldDeleteSourceFiles {
+                do {
+                    try FileManager.default.removeItem(at: item.url)
+                } catch {
+                    errorMessage = String(format: NSLocalizedString("error_cannot_delete_file", comment: ""), item.url.lastPathComponent)
+                    showErrorAlert = true
+                }
             }
 
             // 將更新加入隊列
@@ -337,4 +323,3 @@ class ImageProcessor {
         return sharedCIContext.createCGImage(ciImage, from: rect)
     }
 }
-

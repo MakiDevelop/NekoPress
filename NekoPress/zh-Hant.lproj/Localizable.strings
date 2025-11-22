@@ -20,6 +20,7 @@
 "button_ok" = "確定";
 "error_cannot_load_image" = "無法載入圖片：%@";
 "error_cannot_write_file" = "無法寫入檔案：%@";
+"error_cannot_delete_file" = "無法刪除來源檔案：%@";
 "about_button" = "關於 NekoPress";
 "about_title" = "NekoPress";
 "about_version" = "版本 1.4";
@@ -32,7 +33,7 @@
 "label_output_folder" = "輸出資料夾";
 "button_select_folder" = "選擇";
 "button_same_as_input" = "與輸入圖片相同目錄";
-"label_backup_originals" = "備份原始檔案";
+"label_delete_source_files" = "刪除原始檔案";
 "label_compressing" = "正在壓縮...";
 "button_start" = "開始壓縮";
 "button_cancel" = "取消";
@@ -58,7 +59,7 @@
 "accessibility_compression_level" = "選擇壓縮等級";
 "accessibility_output_format" = "選擇輸出格式";
 "accessibility_select_output_folder" = "選擇輸出資料夾";
-"accessibility_backup_toggle" = "啟用或停用備份原始檔案";
+"accessibility_delete_source_toggle" = "啟用或停用刪除原始檔案";
 "accessibility_start_compression" = "開始壓縮圖片";
 "accessibility_cancel_compression" = "取消壓縮";
 "accessibility_clear_all" = "清除所有圖片";

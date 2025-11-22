@@ -20,6 +20,7 @@
 "button_ok" = "OK";
 "error_cannot_load_image" = "Cannot load image: %@";
 "error_cannot_write_file" = "Cannot write file: %@";
+"error_cannot_delete_file" = "Cannot delete source file: %@";
 "about_button" = "About NekoPress";
 "about_title" = "NekoPress";
 "about_version" = "Version 1.4";
@@ -32,7 +33,7 @@
 "label_output_folder" = "Output Folder";
 "button_select_folder" = "Choose";
 "button_same_as_input" = "Same as input images";
-"label_backup_originals" = "Backup Original Files";
+"label_delete_source_files" = "Delete Original Files";
 "label_compressing" = "Compressing...";
 "button_start" = "Start Compression";
 "button_cancel" = "Cancel";
@@ -58,7 +59,7 @@
 "accessibility_compression_level" = "Select compression level";
 "accessibility_output_format" = "Select output format";
 "accessibility_select_output_folder" = "Select output folder";
-"accessibility_backup_toggle" = "Enable or disable backup of original files";
+"accessibility_delete_source_toggle" = "Enable or disable deleting original files";
 "accessibility_start_compression" = "Start compressing images";
 "accessibility_cancel_compression" = "Cancel compression";
 "accessibility_clear_all" = "Clear all images";
